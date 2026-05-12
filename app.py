@@ -2,33 +2,47 @@ import streamlit as st
 import pandas as pd
 import sqlite3
 import plotly.express as px
-import os
+import os  # 1. 파일 경로 제어를 위해 추가
 
-# 1. 페이지 설정 (웹 브라우저 탭 이름과 아이콘)
-st.set_page_config(
-    page_title="지역별 문화 인프라 & 소비 분석",
-    page_icon="🎭",
-    layout="wide"
-)
+# --- [경로 설정 코드 추가] ---
+# 이 파일(app.py)이 있는 폴더의 절대 경로를 가져옵니다.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, 'culture_data.db')
 
-# 2. 데이터베이스 연결 함수
+# --- [데이터베이스 연결 함수 수정] ---
+# @st.cache_resource를 사용하면 데이터베이스 연결을 유지하여 성능이 좋아집니다.
 def get_connection():
-    db_path = '문화데이터베이스.db'
-    # 파일이 존재하는지 확인 (초보자를 위한 안전장치)
-    if not os.path.exists(db_path):
-        st.error(f"데이터베이스 파일({db_path})을 찾을 수 없습니다. 폴더 구조를 확인해주세요.")
-        return None
-    return sqlite3.connect(db_path)
+    # 이제 상대 경로가 아닌 '절대 경로'인 DB_PATH를 사용합니다.
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    return conn
 
-# 3. 데이터 불러오기 함수 (캐싱 처리로 속도 향상)
-@st.cache_data
-def run_query(query):
+def init_db():
+    # 데이터베이스가 이미 존재하더라도 초기화를 위해 다시 생성합니다.
     conn = get_connection()
-    if conn:
-        df = pd.read_sql_query(query, conn)
-        conn.close()
-        return df
-    return pd.DataFrame()
+    cursor = conn.cursor()
+    
+    # ... (기존 테이블 생성 및 데이터 삽입 코드는 동일) ...
+    # (단, 모든 connect() 부분을 get_connection()으로 바꾸거나 DB_PATH를 사용하세요)
+    
+    # 예시:
+    cursor.execute("DROP TABLE IF EXISTS 예매데이터")
+    # ... (생략) ...
+    conn.commit()
+    conn.close()
+
+# 데이터베이스 초기화 (앱 시작 시 한 번 실행)
+# 만약 이미 데이터가 있다면 이 줄을 주석 처리해도 되지만, 
+# 처음에는 확실히 하기 위해 실행해 주세요.
+if not os.path.exists(DB_PATH):
+    init_db()
+
+# --- [쿼리 실행 함수 수정] ---
+def run_query(query):
+    # 여기도 DB_PATH를 사용하도록 수정
+    conn = sqlite3.connect(DB_PATH)
+    df = pd.read_sql_query(query, conn)
+    conn.close()
+    return df
 
 # --- 대시보드 제목 및 설명 ---
 st.title("🎭 지역별 문화 인프라와 공연 소비 패턴 분석")
