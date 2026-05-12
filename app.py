@@ -13,7 +13,7 @@ st.set_page_config(
 
 # 2. 데이터베이스 연결 함수
 def get_connection():
-    db_path = '문화데이터_대시보드DB.db'
+    db_path = '문화데이터베이스.db'
     # 파일이 존재하는지 확인 (초보자를 위한 안전장치)
     if not os.path.exists(db_path):
         st.error(f"데이터베이스 파일({db_path})을 찾을 수 없습니다. 폴더 구조를 확인해주세요.")
